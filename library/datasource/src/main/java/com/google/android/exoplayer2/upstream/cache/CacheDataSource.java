@@ -35,12 +35,14 @@ import com.google.android.exoplayer2.upstream.TeeDataSource;
 import com.google.android.exoplayer2.upstream.TransferListener;
 import com.google.android.exoplayer2.upstream.cache.Cache.CacheException;
 import com.google.android.exoplayer2.util.Assertions;
+import com.google.android.exoplayer2.util.Log;
 import com.google.android.exoplayer2.util.PriorityTaskManager;
 import java.io.IOException;
 import java.io.InterruptedIOException;
 import java.lang.annotation.Documented;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
+import java.net.URLEncoder;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -555,12 +557,11 @@ public final class CacheDataSource implements DataSource {
   @Override
   public long open(DataSpec dataSpec) throws IOException {
     try {
-      String key = cacheKeyFactory.buildCacheKey(dataSpec);
-      DataSpec requestDataSpec = dataSpec.buildUpon().setKey(key).build();
+      String key = urlEncodeChinese(cacheKeyFactory.buildCacheKey(dataSpec));
+      DataSpec requestDataSpec = dataSpec.buildUpon().setKey(key).setUri(key).build();
       this.requestDataSpec = requestDataSpec;
       actualUri = getRedirectedUriOrDefault(cache, key, /* defaultUri= */ requestDataSpec.uri);
       readPosition = dataSpec.position;
-
       int reason = shouldIgnoreCacheForRequest(dataSpec);
       currentRequestIgnoresCache = reason != CACHE_NOT_IGNORED;
       if (currentRequestIgnoresCache) {
@@ -594,6 +595,47 @@ public final class CacheDataSource implements DataSource {
       throw e;
     }
   }
+
+  // 编码中文和空格部分
+  public  String urlEncodeChinese(String url){
+    StringBuilder resultURL = new StringBuilder();
+    try {
+      for (int i = 0; i < url.length(); i++) {
+        char charAt = url.charAt(i);
+        //对汉字和空格处理
+        if (isChinese(charAt) ) {
+          String encode = URLEncoder.encode(charAt+"","UTF-8");
+          resultURL.append(encode);
+        } else if ( isNbsp(charAt)) {
+          resultURL.append("%20");
+        } else if ('（' == charAt) {
+          resultURL.append("%EF%BC%88");
+        } else if ('）' == charAt) {
+          resultURL.append("%EF%BC%89");
+        }else if ('《' == charAt) {
+          resultURL.append("%E3%80%8A");
+        }else if ('》' == charAt) {
+          resultURL.append("%E3%80%8B");
+        } else {
+          resultURL.append(charAt);
+        }
+      }
+    } catch (Exception e) {
+      e.printStackTrace();
+    }
+    return resultURL.toString();
+  }
+
+  // 判断汉字的方法,只要编码在\u4e00到\u9fa5之间的都是汉字
+  public  boolean isChinese(char c) {
+    return String.valueOf(c).matches("[\u4e00-\u9fa5]");
+  }
+
+  // 判断空格
+  public  boolean isNbsp(char c){
+    return String.valueOf(c).matches("\u00A0|\u0020|\u3000");
+  }
+
 
   @Override
   public int read(byte[] buffer, int offset, int length) throws IOException {

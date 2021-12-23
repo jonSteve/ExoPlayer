@@ -53,6 +53,7 @@ import com.google.android.exoplayer2.upstream.DataSource;
 import com.google.android.exoplayer2.util.DebugTextViewHelper;
 import com.google.android.exoplayer2.util.ErrorMessageProvider;
 import com.google.android.exoplayer2.util.EventLogger;
+import com.google.android.exoplayer2.util.Log;
 import com.google.android.exoplayer2.util.Util;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -290,6 +291,7 @@ public class PlayerActivity extends AppCompatActivity
     player.setMediaItems(mediaItems, /* resetPosition= */ !haveStartPosition);
     player.prepare();
     updateButtonVisibility();
+
     return true;
   }
 
@@ -455,6 +457,7 @@ public class PlayerActivity extends AppCompatActivity
 
     @Override
     public Pair<Integer, String> getErrorMessage(PlaybackException e) {
+      e.fillInStackTrace();
       String errorString = getString(R.string.error_generic);
       Throwable cause = e.getCause();
       if (cause instanceof DecoderInitializationException) {
@@ -479,6 +482,7 @@ public class PlayerActivity extends AppCompatActivity
                   decoderInitializationException.codecInfo.name);
         }
       }
+      Log.e(">>>>>>",e.getMessage() + ">>" + e.errorCode);
       return Pair.create(0, errorString);
     }
   }
@@ -512,3 +516,5 @@ public class PlayerActivity extends AppCompatActivity
     return mediaItems;
   }
 }
+
+
