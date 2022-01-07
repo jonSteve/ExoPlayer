@@ -40,6 +40,8 @@ import java.io.IOException;
 import java.net.CookieHandler;
 import java.net.CookieManager;
 import java.net.CookiePolicy;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.Executors;
 import org.checkerframework.checker.nullness.qual.MonotonicNonNull;
 import org.checkerframework.checker.nullness.qual.Nullable;
@@ -109,6 +111,10 @@ public final class DemoUtil {
         httpDataSourceFactory = new DefaultHttpDataSource.Factory();
       }
     }
+    Map<String,String> map = new HashMap<>();
+    map.put("Referer","https://tongbu.eduyun.cn/");
+    map.put("Origin","https://tongbu.eduyun.cn/");
+    httpDataSourceFactory.setDefaultRequestProperties(map);
     return httpDataSourceFactory;
   }
 
